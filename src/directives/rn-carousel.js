@@ -6,7 +6,7 @@
     .service('DeviceCapabilities', function() {
 
         // TODO: merge in a single function
-
+        var _deactivateDetect3d = false;
         // detect supported CSS property
         function detectTransformProperty() {
             var transformProperty = 'transform',
@@ -51,7 +51,12 @@
         }
 
         return {
-            has3d: detect3dSupport(),
+            deactivateDetect3d: function(value) {
+                _deactivateDetect3d = !!value;
+            },
+            has3d: function() {
+                return _deactivateDetect3d ? true : detect3dSupport();
+            },
             transformProperty: detectTransformProperty()
         };
 
@@ -65,7 +70,7 @@
                 },
                 opacity,
                 absoluteLeft = (slideIndex * 100) + offset,
-                slideTransformValue = DeviceCapabilities.has3d ? 'translate3d(' + absoluteLeft + '%, 0, 0)' : 'translate3d(' + absoluteLeft + '%, 0)',
+                slideTransformValue = DeviceCapabilities.has3d() ? 'translate3d(' + absoluteLeft + '%, 0, 0)' : 'translate3d(' + absoluteLeft + '%, 0)',
                 distance = ((100 - Math.abs(absoluteLeft)) / 100);
 
             if (!DeviceCapabilities.transformProperty) {
@@ -119,8 +124,8 @@
         };
     })
 
-    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$timeout', '$interval', 'computeCarouselSlideStyle', 'createStyleString', 'Tweenable',
-        function($swipe, $window, $document, $parse, $compile, $timeout, $interval, computeCarouselSlideStyle, createStyleString, Tweenable) {
+    .directive('rnCarousel', ['$swipe', '$window', '$document', '$parse', '$compile', '$timeout', '$interval', 'computeCarouselSlideStyle', 'createStyleString', 'Tweenable', 'DeviceCapabilities',
+        function($swipe, $window, $document, $parse, $compile, $timeout, $interval, computeCarouselSlideStyle, createStyleString, Tweenable, DeviceCapabilities) {
             // internal ids to allow multiple instances
             var carouselId = 0,
                 // in absolute pixels, at which distance the slide stick to the edge on release
@@ -214,6 +219,10 @@
                             animating = false,
                             mouseUpBound = false,
                             locked = false;
+
+                        if (angular.isDefined(iAttributes['rnCarouselDeactivateDetect3d'])) {
+                            DeviceCapabilities.deactivateDetect3d(true);
+                        }
 
                         //rn-swipe-disabled =true will only disable swipe events
                         if(iAttributes.rnSwipeDisabled !== "true") {
